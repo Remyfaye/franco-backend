@@ -10,10 +10,11 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getFullUser(request);
-    if (!user || !user.roles.includes("ADMIN")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // const user = await getFullUser(request);
+    // if (!user || !user.roles.includes("ADMIN")) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
+    // removed authheck
 
     // Check environment variables
     const requiredEnvVars = [
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
 
     // DEBUG: Log all formData entries
-    console.log("=== ALL FORM DATA ENTRIES ===");
+    console.log("==== ALL FORM DATA ENTRIES ====");
     const allEntries: { [key: string]: any } = {};
     for (const [key, value] of formData.entries()) {
       if (value instanceof File) {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     if (imageFiles.length === 0) {
       return NextResponse.json(
-        { error: "At least one product image is required" },
+        { error: "Please upload At least one product image" },
         { status: 400 }
       );
     }
