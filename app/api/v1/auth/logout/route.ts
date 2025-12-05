@@ -84,23 +84,3 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   return POST(request);
 }
-
-// Add OPTIONS handler for CORS preflight (copy from /auth/me)
-export async function OPTIONS(request: NextRequest) {
-  console.log("🔄 [LOGOUT] Handling OPTIONS request");
-  const response = new NextResponse(null, { status: 200 });
-  response.headers.set(
-    "Access-Control-Allow-Origin",
-    request.headers.get("origin") || "*"
-  );
-  response.headers.set("Access-Control-Allow-Credentials", "true");
-  response.headers.set(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  response.headers.set(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  return response;
-}

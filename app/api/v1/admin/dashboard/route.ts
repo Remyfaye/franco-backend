@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     const platformProfit = platformRevenue - publisherPayouts;
 
     // Format recent actions
-    const formattedRecentActions = recentActions.map((action) => ({
+    const formattedRecentActions = recentActions.map((action: any) => ({
       id: action.id,
       actionType: action.actionType,
       description: action.description,
