@@ -10,10 +10,10 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    // const user = await getFullUser(request);
-    // if (!user || !user.roles.includes("ADMIN")) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    const user = await getFullUser(request);
+    if (!user || !user.roles.includes("ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Check environment variables
     const requiredEnvVars = [
