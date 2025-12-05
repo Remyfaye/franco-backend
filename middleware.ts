@@ -1,44 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import cors from "cors";
 
-// Define allowed origins (add more for local dev or previews)
 const allowedOrigins = [
   "https://franco-lemon.vercel.app",
-  "http://localhost:3000",
-]; // Adjust as needed
+  "http://localhost:3000", // For local dev
+  // Add Vercel preview URLs if needed, e.g., using a pattern check below
+];
 
-// CORS options
 const corsOptions = {
   origin: (
     origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
+    callback: (err: Error | null, allow?: boolean | string) => void
   ) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+    if (
+      !origin ||
+      allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      callback(null, origin); // Echo back the origin for previews
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"], // Add any custom headers you use
-  credentials: true, // If using cookies/auth
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true, // If using sessions/cookies
 };
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-
-  // Run CORS middleware
-  return new Promise((resolve, reject) => {
-    cors(corsOptions)(request as any, response as any, (result: any) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(response);
-    });
+export async function middleware(request: NextRequest) {
+  return await new Promise((resolve) => {
+    cors(corsOptions)(
+      request as any,
+      NextResponse.next() as any,
+      resolve as any
+    );
   });
 }
 
-// Apply to all /api/* routes
 export const config = {
   matcher: "/api/:path*",
 };
