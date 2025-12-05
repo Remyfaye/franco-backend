@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const allowedOrigins = [
   "https://franco-lemon.vercel.app",
+  "https://franco.ng",
   "http://localhost:3000",
 ];
 

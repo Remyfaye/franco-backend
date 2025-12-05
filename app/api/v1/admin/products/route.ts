@@ -258,7 +258,7 @@ export async function GET(request: NextRequest) {
 // DELETE endpoint to delete a product
 export async function DELETE(request: NextRequest) {
   try {
-    const user = await getCurrentUserWithRoles(request);
+    const user = await getFullUser(request);
     if (!user || !user.roles.includes("ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ProductSchema } from "../../../../../../lib/validation";
 import { uploadMultipleToR2WithSDK } from "../../../../../../lib/cloudflare";
-import { getCurrentUserWithRoles } from "../../../../../../lib/user";
+import {
+  getCurrentUserWithRoles,
+  getFullUser,
+} from "../../../../../../lib/user";
 import { prisma } from "../../../../../../lib/db.cjs";
 import { createAdminLog } from "../../../../../../lib/utils";
 
@@ -11,7 +14,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUserWithRoles(request);
+    const user = await getFullUser(request);
     if (!user || !user.roles.includes("ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
