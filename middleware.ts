@@ -1,54 +1,44 @@
-// middleware.ts (in your BACKEND project)
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import cors from "cors";
+
+// Define allowed origins (add more for local dev or previews)
+const allowedOrigins = [
+  "https://franco-lemon.vercel.app",
+  "http://localhost:3000",
+]; // Adjust as needed
+
+// CORS options
+const corsOptions = {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"], // Add any custom headers you use
+  credentials: true, // If using cookies/auth
+};
 
 export function middleware(request: NextRequest) {
-  // Handle preflight requests
-  if (request.method === "OPTIONS") {
-    const response = new NextResponse(null, { status: 200 });
-
-    const origin = request.headers.get("origin");
-    const allowedOrigins = [
-      "https://franco-backend.vercel.app/",
-      "http://localhost:3000",
-      "http://localhost:3001",
-    ];
-
-    if (origin && allowedOrigins.includes(origin)) {
-      response.headers.set("Access-Control-Allow-Origin", origin);
-    }
-
-    response.headers.set("Access-Control-Allow-Credentials", "true");
-    response.headers.set(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-    );
-    response.headers.set(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, Cache-Control, Pragma"
-    );
-
-    return response;
-  }
-
-  // For actual requests, add CORS headers
   const response = NextResponse.next();
 
-  const origin = request.headers.get("origin");
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://franco-backend.vercel.app/",
-  ];
-
-  if (origin && allowedOrigins.includes(origin)) {
-    response.headers.set("Access-Control-Allow-Origin", origin);
-  }
-  response.headers.set("Access-Control-Allow-Credentials", "true");
-
-  return response;
+  // Run CORS middleware
+  return new Promise((resolve, reject) => {
+    cors(corsOptions)(request as any, response as any, (result: any) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(response);
+    });
+  });
 }
 
+// Apply to all /api/* routes
 export const config = {
   matcher: "/api/:path*",
 };
