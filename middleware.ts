@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
 
     const origin = request.headers.get("origin");
     const allowedOrigins = [
-      "https://adhive-frontend.vercel.app",
+      "https://franco-backend.vercel.app/",
       "http://localhost:3000",
       "http://localhost:3001",
     ];
@@ -36,10 +36,9 @@ export function middleware(request: NextRequest) {
 
   const origin = request.headers.get("origin");
   const allowedOrigins = [
-    "https://adhive-frontend.vercel.app",
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://seltra.app/",
+    "https://franco-backend.vercel.app/",
   ];
 
   if (origin && allowedOrigins.includes(origin)) {
