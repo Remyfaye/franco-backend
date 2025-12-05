@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  firstName          String @default("USER")
+  lastName          String  @default("USER")
+  phone          String  @default("234")   
+  roles          UserRole[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders Order[]
+  adminLogs AdminLog[]
+  cart Cart[]
+
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Int      // in kobo - original price
+  oldPrice    Int?     // in kobo - original price before discount
+  discountPercentage Int? // e.g., 35 for 35%
+  label       String?  // e.g., "35% OFF", "Black Friday", "New Arrival"
+  categoryId  String
+  imageUrls   String[]
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  inCart CartItem[]
+}
+
+
+model Order {
+  id             String         @id @default(uuid())
+  userId         String
+  totalAmount    Int            // in kobo
+  paymentStatus  PaymentStatus  @default(PAID)
+  deliveryStatus DeliveryStatus @default(PROCESSING)
+  paystackRef    String?        @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+  adminLogs AdminLog[]
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Int    // snapshot price in kobo
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model AdminLog {
+  id           String   @id @default(uuid())
+  adminUserId  String
+  action       String   // CREATE, UPDATE, DELETE
+  entity       String   // PRODUCT, ORDER, CATEGORY
+  entityId     String
+  diffJson     Json?    // JSON diff of changes
+  createdAt    DateTime @default(now())
+
+  adminUser User @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  Order Order[]
+}
+
+
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int     @default(1)
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
