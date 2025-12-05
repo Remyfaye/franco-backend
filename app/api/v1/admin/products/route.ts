@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
     // if (!user || !user.roles.includes("ADMIN")) {
     //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     // }
-    // removed authheck
 
     // Check environment variables
     const requiredEnvVars = [
