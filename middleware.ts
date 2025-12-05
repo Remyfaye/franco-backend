@@ -1,40 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import cors from "cors";
 
 const allowedOrigins = [
   "https://franco-lemon.vercel.app",
-  "http://localhost:3000", // For local dev
-  // Add Vercel preview URLs if needed, e.g., using a pattern check below
+  "http://localhost:3000",
 ];
 
-const corsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean | string) => void
-  ) => {
-    if (
-      !origin ||
-      allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
-      origin.endsWith(".vercel.app")
-    ) {
-      callback(null, origin); // Echo back the origin for previews
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // If using sessions/cookies
-};
-
 export async function middleware(request: NextRequest) {
-  return await new Promise((resolve) => {
-    cors(corsOptions)(
-      request as any,
-      NextResponse.next() as any,
-      resolve as any
-    );
-  });
+  // Get the origin of the request
+  const origin = request.headers.get("origin") || "";
+  const isAllowedOrigin =
+    allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+
+  // Handle preflight requests
+  if (request.method === "OPTIONS") {
+    const preflightHeaders = {
+      "Access-Control-Allow-Origin": isAllowedOrigin
+        ? origin
+        : allowedOrigins[0],
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
+    };
+    return new NextResponse(null, { status: 200, headers: preflightHeaders });
+  }
+
+  // Handle regular requests
+  const response = NextResponse.next();
+
+  if (isAllowedOrigin) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+  }
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  response.headers.set("Access-Control-Allow-Credentials", "true");
+
+  return response;
 }
 
 export const config = {
