@@ -79,6 +79,39 @@ export async function getCurrentUser(
   }
 }
 
+export async function getFullUser(request: NextRequest) {
+  console.log("fetching token");
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.replace("Bearer ", "");
+    console.log("🔍 [getCurrentUser] Using Authorization header token:", token);
+    if (!token) {
+      console.log("No token provided");
+      throw new Error("No token provided");
+    }
+
+    const user = await verifyAuthToken(token);
+    if (!user) console.log("no user found");
+
+    console.log("user retrieved", user?.userId);
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user?.userId },
+    });
+
+    return fullUser;
+  }
+
+  const cookieToken = request.cookies.get("auth-token")?.value;
+  if (cookieToken) {
+    console.log("🔍 [getCurrentUser] Using cookie token");
+    const user = await verifyAuthToken(cookieToken);
+    return user;
+  }
+
+  return null;
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key"
 );

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUserWithRoles } from "../../../../../lib/user";
+import { getCurrentUserWithRoles, getFullUser } from "../../../../../lib/user";
 import { ProductSchema } from "../../../../../lib/validation";
 import { prisma } from "../../../../../lib/db.cjs";
 import { createAdminLog } from "../../../../../lib/utils";
@@ -10,7 +10,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUserWithRoles(request);
+    const user = await getFullUser(request);
     if (!user || !user.roles.includes("ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -157,14 +157,6 @@ export async function POST(request: NextRequest) {
       include: {
         category: true,
       },
-    });
-
-    // Create admin log
-    await createAdminLog(user.userId, "CREATE", "PRODUCT", product.id, {
-      name: product.name,
-      price: product.price,
-      category: product.categoryId,
-      imageCount: imageUrls.length,
     });
 
     return NextResponse.json(

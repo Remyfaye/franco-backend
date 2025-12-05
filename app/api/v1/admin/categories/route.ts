@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getCurrentUser,
   getCurrentUserWithRoles,
+  getFullUser,
 } from "../../../../../lib/user";
 import { CategorySchema } from "../../../../../lib/validation";
 import { prisma } from "../../../../../lib/db.cjs";
@@ -9,9 +10,17 @@ import { createAdminLog } from "../../../../../lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUserWithRoles(request);
-    if (!user || !user.roles.includes("ADMIN")) {
+    const user = await getFullUser(request);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isAdmin = user.roles.includes("ADMIN");
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Not admin", user: user },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -20,14 +29,6 @@ export async function POST(request: NextRequest) {
     const category = await prisma.category.create({
       data: categoryData,
     });
-
-    await createAdminLog(
-      user.userId,
-      "CREATE",
-      "category",
-      category.id,
-      categoryData
-    );
 
     return NextResponse.json({ category });
   } catch (error) {
@@ -74,9 +75,17 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const user = await getCurrentUserWithRoles(request);
-    if (!user || !user.roles.includes("ADMIN")) {
+    const user = await getFullUser(request);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isAdmin = user.roles.includes("ADMIN");
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Not admin", user: user },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -108,14 +117,6 @@ export async function PUT(request: NextRequest) {
       data: categoryData,
     });
 
-    await createAdminLog(
-      user.userId,
-      "UPDATE",
-      "category",
-      updatedCategory.id,
-      categoryData
-    );
-
     return NextResponse.json(
       {
         message: "Category updated successfully",
@@ -134,9 +135,19 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const user = await getCurrentUserWithRoles(request);
-    if (!user || !user.roles.includes("ADMIN")) {
+    const user = await getFullUser(request);
+    if (!user) {
+      console.log("User not logged in");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isAdmin = user.roles.includes("ADMIN");
+    if (!isAdmin) {
+      console.log("User not admin", user);
+      return NextResponse.json(
+        { error: "Not admin", user: user },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -176,11 +187,6 @@ export async function DELETE(request: NextRequest) {
     // Delete the category
     await prisma.category.delete({
       where: { id },
-    });
-
-    // Create admin log
-    await createAdminLog(user.userId, "DELETE", "category", id, {
-      name: category.name,
     });
 
     return NextResponse.json(
