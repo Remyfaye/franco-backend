@@ -72,6 +72,13 @@ export async function POST(request: NextRequest) {
     }
     console.log(`[${requestId}] ✓ Environment validation passed`);
 
+    console.log(
+      `[${requestId}] Content-Type: ${
+        request.headers.get("content-type") || "none"
+      }`
+    );
+    console.log(`[${requestId}] Headers:`, Object.fromEntries(request.headers));
+
     // Step 3: Parse form data
     console.log(`[${requestId}] Step 3: Parsing form data`);
     let formData: FormData;
