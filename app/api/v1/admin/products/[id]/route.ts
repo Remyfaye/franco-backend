@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ProductSchema } from "../../../../../../lib/validation";
-import { uploadMultipleToR2WithSDK } from "../../../../../../lib/cloudflare";
+import {
+  deleteMultipleFromR2,
+  uploadMultipleToR2WithSDK,
+} from "../../../../../../lib/cloudflare";
 import {
   getCurrentUserWithRoles,
   getFullUser,
@@ -149,6 +152,77 @@ export async function PUT(
       }
     }
 
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE endpoint to delete a product
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getFullUser(request);
+    if (!user || !user.roles.includes("ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Product ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Fetch product details for logging and image deletion
+    const product = await prisma.product.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        imageUrls: true,
+        price: true,
+        categoryId: true,
+      },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    // Extract keys from image URLs for R2 deletion
+    const keys = product.imageUrls.map((url: string) =>
+      url.replace(`https://${process.env.CLOUDFLARE_PUBLIC_URL}/`, "")
+    );
+
+    // Delete images from R2
+    await deleteMultipleFromR2(keys);
+
+    // Delete product from database
+    await prisma.product.delete({
+      where: { id },
+    });
+
+    // Create admin log
+    await createAdminLog(user.userId, "DELETE", "PRODUCT", product.id, {
+      name: product.name,
+      price: product.price,
+      category: product.categoryId,
+      imageCount: product.imageUrls.length,
+    });
+
+    return NextResponse.json(
+      {
+        status: 200,
+        message: "Product deleted successfully",
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Product deletion error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
