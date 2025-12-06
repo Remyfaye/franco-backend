@@ -160,15 +160,17 @@ export async function PUT(
 }
 
 // DELETE endpoint to delete a product
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params; // Get ID from path parameter
+
     const user = await getFullUser(request);
     if (!user || !user.roles.includes("ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
@@ -204,14 +206,6 @@ export async function DELETE(request: NextRequest) {
     // Delete product from database
     await prisma.product.delete({
       where: { id },
-    });
-
-    // Create admin log
-    await createAdminLog(user.userId, "DELETE", "PRODUCT", product.id, {
-      name: product.name,
-      price: product.price,
-      category: product.categoryId,
-      imageCount: product.imageUrls.length,
     });
 
     return NextResponse.json(
