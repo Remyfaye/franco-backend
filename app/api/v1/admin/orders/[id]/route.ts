@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "../../../../../../lib/db.cjs";
 import { handleResponse } from "../../../../../../lib";
 
-export async function PATCH(
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {

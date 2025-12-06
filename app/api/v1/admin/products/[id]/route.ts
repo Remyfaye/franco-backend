@@ -60,9 +60,11 @@ export async function PUT(
       );
     }
 
+    const paramsId = await params.id;
+
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id: paramsId },
     });
 
     if (!existingProduct) {
@@ -121,14 +123,6 @@ export async function PUT(
       include: {
         category: true,
       },
-    });
-
-    // Create admin log
-    await createAdminLog(user.userId, "UPDATE", "PRODUCT", updatedProduct.id, {
-      name: updatedProduct.name,
-      price: updatedProduct.price,
-      category: updatedProduct.categoryId,
-      imageCount: allImageUrls.length,
     });
 
     return NextResponse.json({
